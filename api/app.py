@@ -6,18 +6,24 @@ from dateutil.relativedelta import relativedelta
 
 app = Flask(__name__)
 
-init_invest = 1000
-coin = ''
-years = 0
-
 @app.route('/crypto', methods=['POST'])
 def calculate_value():
+    """ Calculates the current value of initial investment from
+        certain amount of years for the given cryptocurrency coin.
+
+    Returns:
+        current_value (float)
+        percent_gain (float)
+        date (string)
+        past_price (float)
+        current_price (float)
+    """
+    print(request.json['data'])
 
     # GET DATA
     init_invest = request.json['data']['initInvest']
     coin = request.json['data']['coinSymbol']
     years = request.json['data']['yearsAgo']
-    print(init_invest, coin, years)
 
     # CALL API
     cg = CoinGeckoAPI()
@@ -37,9 +43,13 @@ def calculate_value():
 
     # CALCULATE VALUE
     current_value = ((current_price - past_price) / past_price) * int(init_invest)
-    print(current_value)
+    percent_gain = ((current_price - past_price) / past_price) * 100
 
-    return {'value': current_value}
+    return {'value': current_value,
+            'percentGain': percent_gain,
+            'todaysDate': date,
+            'pastPrice': past_price,
+            'currentPrice':current_price}
 
 @app.route('/coins', methods=['GET'])
 def get_coin_ids():
@@ -47,7 +57,6 @@ def get_coin_ids():
     cg = CoinGeckoAPI()
 
     # GET TOP 25 COINS
-    market = cg.get_coins_markets('usd')[:25]
-    coin_list = [m['id'] for m in market]
+    market = cg.get_coins_markets('usd')[:100]
 
-    return {'coin_list': coin_list}
+    return {'coin_list': [(m['id'], m['name'], m['image']) for m in market]}
